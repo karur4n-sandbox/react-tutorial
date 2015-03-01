@@ -1,8 +1,4 @@
 var converter = new Showdown.converter();
-var data = [
-  {author: "Pete Hunt", text: "This is one comment"},
-  {author: "Jordan Walke", text: "This is *another* comment"}
-];
 
 var CommentList = React.createClass({
   render: function() {
@@ -46,18 +42,37 @@ var CommentForm = React.createClass({
 });
 
 var CommentBox = React.createClass({
+  loadCommentsFromServer: function() {
+    $.ajax({
+      url: this.props.url,
+      dataType: 'json',
+      success: function(data) {
+        this.setState({data: data});
+      }.bind(this),
+      error: function(xhr, status, err) {
+        console.error(this.props.url, status, err.toString());
+      }.bind(this)
+    });
+  },
+  getInitialState: function() {
+    return {data: []};
+  },
+  componentDidMount: function() {
+    this.loadCommentsFromServer();
+    setInterval(this.loadCommentsFromServer, this.props.pollInterval);
+  },
   render: function() {
     return (
       <div className="commentBox">
         <h1>Comments</h1>
-        <CommentList data={this.props.data} />
+        <CommentList data={this.state.data} />
         <CommentForm />
       </div>
-    )
+    );
   }
 });
 
 React.render(
-  <CommentBox data={data} />,
+  <CommentBox url="comments.json" pollInterval={2000} />,
   document.getElementById('content')
 );
